@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
-import RFIDDatabase from '../firebase/rfidDatabase';
 
 const RFIDScreen = ({ onLogin }) => {
   const [rfidInput, setRfidInput] = useState('');
@@ -8,19 +7,25 @@ const RFIDScreen = ({ onLogin }) => {
 
   const handleRFIDSubmit = async () => {
     try {
-      const user = await RFIDDatabase.getUser(rfidInput);
-      if (user) {
-        setMessage('Login successful');
-        onLogin(user.rfidUUID); // Navigate to profile with user UUID
-      } else {
-        await RFIDDatabase.registerUser(rfidInput);
-        setMessage('New user registered');
+      const response = await fetch('http://localhost:7000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rfidUUID: rfidInput }),
+      });
+
+      const data = await response.json();
+      console.log("bruh", data)
+      if (response.ok) {
+        setMessage(data.message);
         onLogin(rfidInput);
+      } else {
+        setMessage(data.error || 'Error processing RFID');
       }
+
       setRfidInput('');
     } catch (error) {
-      console.error('Error processing RFID:', error);
-      setMessage('Error processing RFID');
+      console.log('Error processing RFID:', error);
+      setMessage('Server error');
     }
   };
 

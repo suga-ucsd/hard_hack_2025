@@ -1,76 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Button, Text, StyleSheet, Image, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Button, Text, StyleSheet, Image } from 'react-native';
 
 const ImageScreen = ({ user, onLogout }) => {
-  const [imageMode, setImageMode] = useState('snapshot'); // 'snapshot' or 'stream'
   const [imageUri, setImageUri] = useState(null);
   const [error, setError] = useState(null);
-  const [timestamp, setTimestamp] = useState(0);
-  const streamRef = useRef(null);
 
-  const baseUrl = 'http://localhost:5000';
+  const checkTrigger = async () => {
+    try {
+      const response = await fetch('http://localhost:8082');
+      const text = await response.text();
+      if (text.trim() === '1') {
+        fetchImage();
+      }
+    } catch (err) {
+      console.error('Error fetching trigger value:', err);
+      setError('Failed to fetch trigger');
+    }
+  };
 
-  const fetchSnapshot = async () => {
+  const fetchImage = async () => {
     try {
       setError(null);
-      const url = `${baseUrl}/video_feed/snapshot?t=${Date.now()}`;
+      const url = `http://localhost:7001/capture?t=${Date.now()}`;
       setImageUri(url);
-      setTimestamp(Date.now());
-    } catch (error) {
-      setError('Failed to fetch snapshot');
-      console.error('Error fetching snapshot:', error);
+    } catch (err) {
+      console.error('Error fetching image:', err);
+      setError('Failed to fetch image');
     }
   };
 
-  const startStream = () => {
-    setError(null);
-    setImageUri(`${baseUrl}/video_feed`);
-    setImageMode('stream');
-  };
-
-  const stopStream = () => {
-    setImageMode('snapshot');
-    setImageUri(null);
-  };
-
-  // Auto-refresh snapshot mode
   useEffect(() => {
-    let interval;
-    if (imageMode === 'snapshot') {
-      fetchSnapshot(); // Initial fetch
-      interval = setInterval(fetchSnapshot, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [imageMode]);
+    const interval = setInterval(checkTrigger, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome, {user}!</Text>
 
-      <View style={styles.buttonContainer}>
-        <Button
-          title={imageMode === 'snapshot' ? 'Switch to Stream' : 'Switch to Snapshot'}
-          onPress={() => imageMode === 'snapshot' ? startStream() : stopStream()}
-        />
-      </View>
-
       <View style={styles.imageContainer}>
-        {imageUri && (
-          <Image
-            source={{
-              uri: imageUri,
-              headers: { 'Cache-Control': 'no-cache' },
-              key: imageMode === 'snapshot' ? timestamp.toString() : 'stream'
-            }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        )}
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />}
         {error && <Text style={styles.error}>{error}</Text>}
       </View>
 
+      <Button title="Capture Image" onPress={fetchImage} color="blue" />
       <Button title="Logout" onPress={onLogout} color="red" />
     </View>
   );
@@ -85,11 +58,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    marginBottom: 10,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
     marginBottom: 10,
   },
   imageContainer: {
