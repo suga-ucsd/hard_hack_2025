@@ -3,7 +3,7 @@
 import requests
 import time
 
-def query_endpoint(url="http://localhost:8082"):
+def query_endpoint(url="http://172.20.10.2:8082"):
     try:
         response = requests.get(url)
         print(f"Status Code: {response.status_code}")

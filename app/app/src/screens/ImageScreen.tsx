@@ -7,7 +7,7 @@ const ImageScreen = ({ user, onLogout }) => {
 
   const checkTrigger = async () => {
     try {
-      const response = await fetch('http://localhost:8082');
+      const response = await fetch('http://172.20.10.2:8082');
       const text = await response.text();
       if (text.trim() === '1') {
         fetchImage();
@@ -21,7 +21,7 @@ const ImageScreen = ({ user, onLogout }) => {
   const fetchImage = async () => {
     try {
       setError(null);
-      const url = `http://localhost:7001/capture?t=${Date.now()}`;
+      const url = `http://172.20.10.2:7001/capture?t=${Date.now()}`;
       setImageUri(url);
     } catch (err) {
       console.error('Error fetching image:', err);
